@@ -1,63 +1,192 @@
-<script>
-    const GEMINI_API_KEY = 'AIzaSyBELzK5j4T6kss4ZQSz4OLB7OLX-Bo_WO4';  // Replace for testing only
-
-    const board = document.getElementById('board');
-    const commentary = document.getElementById('commentary');
-    let cells = ['', '', '', '', '', '', '', '', ''];
-    let gameOver = false;
-
-    function renderBoard() {
-        board.innerHTML = '';
-        cells.forEach((cell, index) => {
-            const cellDiv = document.createElement('div');
-            cellDiv.classList.add('cell');
-            cellDiv.textContent = cell;
-            if (!gameOver) {
-                cellDiv.onclick = () => handleMove(index);
-            }
-            board.appendChild(cellDiv);
-        });
-    }
-
-    function handleMove(index) {
-        if (cells[index] !== '' || gameOver) return;
-        cells[index] = 'X';
-        renderBoard();
-        if (checkWin('X')) {
-            commentary.textContent = 'You have won!';
-            gameOver = true;
-            return;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tic Tac Toe vs Gemini AI</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
         }
-        board.classList.add('disabled');
-        requestAIMove();
-    }
 
-    function checkWin(player) {
-        const wins = [
-            [0,1,2],[3,4,5],[6,7,8],  // rows
-            [0,3,6],[1,4,7],[2,5,8],  // columns
-            [0,4,8],[2,4,6]           // diagonals
-        ];
-        return wins.some(combo => combo.every(idx => cells[idx] === player));
-    }
+        h1 {
+            margin-top: 20px;
+            font-size: 2em;
+            color: #00c9ff;
+        }
 
-    function getPositions(player) {
-        const posNames = [
-            'top left', 'top middle', 'top right',
-            'middle left', 'center', 'middle right',
-            'bottom left', 'bottom middle', 'bottom right'
-        ];
-        return cells
-            .map((val, idx) => val === player ? posNames[idx] : null)
-            .filter(val => val)
-            .join(', ') || 'none';
-    }
+        .top-section {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            margin: 20px 0;
+            align-items: center;
+            justify-content: center;
+        }
 
-    async function requestAIMove() {
-        const xPositions = getPositions('X');
-        const oPositions = getPositions('O');
+        .blob-frame {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 0 20px rgba(0, 201, 255, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
-        const prompt = `
+        .blob {
+            width: 160px;
+            height: 160px;
+            background: linear-gradient(135deg, #00c9ff, #92fe9d);
+            border-radius: 33% 67% 70% 30% / 30% 30% 70% 70%;
+            animation: morph 4s infinite ease-in-out;
+            box-shadow: 0 10px 30px rgba(0, 201, 255, 0.7);
+        }
+
+        @keyframes morph {
+            0% { border-radius: 33% 67% 70% 30% / 30% 30% 70% 70%; }
+            50% { border-radius: 60% 40% 30% 70% / 60% 40% 60% 40%; }
+            100% { border-radius: 33% 67% 70% 30% / 30% 30% 70% 70%; }
+        }
+
+        .commentary-bubble {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            font-style: italic;
+            font-size: 1em;
+            line-height: 1.4em;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 250px;
+            min-height: 80px;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: row;
+            margin-top: 20px;
+            gap: 40px;
+            align-items: flex-start;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 5px;
+            background: #0f0c29;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+        }
+
+        .cell {
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2em;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .cell:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .disabled {
+            pointer-events: none;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Tic Tac Toe vs Gemini AI</h1>
+
+    <div class="top-section">
+        <div class="blob-frame">
+            <div class="blob"></div>
+        </div>
+        <div class="commentary-bubble" id="commentary">
+            Awaiting your move...
+        </div>
+    </div>
+
+    <div class="game-container">
+        <div class="board" id="board"></div>
+    </div>
+
+    <script>
+        const GEMINI_API_KEY = 'AIzaSyBELzK5j4T6kss4ZQSz4OLB7OLX-Bo_WO4';
+
+        const board = document.getElementById('board');
+        const commentary = document.getElementById('commentary');
+        let cells = ['', '', '', '', '', '', '', '', ''];
+        let gameOver = false;
+
+        function renderBoard() {
+            board.innerHTML = '';
+            cells.forEach((cell, index) => {
+                const cellDiv = document.createElement('div');
+                cellDiv.classList.add('cell');
+                cellDiv.textContent = cell;
+                if (!gameOver) {
+                    cellDiv.onclick = () => handleMove(index);
+                }
+                board.appendChild(cellDiv);
+            });
+        }
+
+        function handleMove(index) {
+            if (cells[index] !== '' || gameOver) return;
+            cells[index] = 'X';
+            renderBoard();
+            if (checkWin('X')) {
+                commentary.textContent = 'You have won!';
+                gameOver = true;
+                return;
+            }
+            board.classList.add('disabled');
+            requestAIMove();
+        }
+
+        function checkWin(player) {
+            const wins = [
+                [0,1,2],[3,4,5],[6,7,8],
+                [0,3,6],[1,4,7],[2,5,8],
+                [0,4,8],[2,4,6]
+            ];
+            return wins.some(combo => combo.every(idx => cells[idx] === player));
+        }
+
+        function getPositions(player) {
+            const posNames = [
+                'top left', 'top middle', 'top right',
+                'middle left', 'center', 'middle right',
+                'bottom left', 'bottom middle', 'bottom right'
+            ];
+            return cells
+                .map((val, idx) => val === player ? posNames[idx] : null)
+                .filter(val => val)
+                .join(', ') || 'none';
+        }
+
+        async function requestAIMove() {
+            const xPositions = getPositions('X');
+            const oPositions = getPositions('O');
+
+            const prompt = `
 You are playing Tic Tac Toe as O. You are the best Tic Tac Toe player possible.
 
 Current board:
@@ -74,74 +203,77 @@ Otherwise:
 - Reply with a short commentary as the second line.
 `;
 
-        commentary.textContent = 'AI is thinking...';
+            commentary.textContent = 'AI is thinking...';
 
-        const body = {
-            contents: [{
-                role: "user",
-                parts: [{ text: prompt }]
-            }]
-        };
+            const body = {
+                contents: [{
+                    role: "user",
+                    parts: [{ text: prompt }]
+                }]
+            };
 
-        try {
-            const response = await fetch(
-                'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + GEMINI_API_KEY,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
+            try {
+                const response = await fetch(
+                    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + GEMINI_API_KEY,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    }
+                );
+
+                const data = await response.json();
+                let aiResponse = '';
+
+                if (data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+                    aiResponse = data.candidates[0].content.parts[0].text.trim();
+                } else {
+                    aiResponse = "ERROR: No valid response.";
                 }
-            );
 
-            const data = await response.json();
-            let aiResponse = '';
+                if (aiResponse.includes('O WON') || aiResponse.includes('X WON')) {
+                    commentary.textContent = aiResponse.includes('O WON') ? 'AI has won!' : 'You have won!';
+                    gameOver = true;
+                    board.classList.remove('disabled');
+                    return;
+                }
 
-            if (data?.candidates?.[0]?.content?.parts?.[0]?.text) {
-                aiResponse = data.candidates[0].content.parts[0].text.trim();
-            } else {
-                aiResponse = "ERROR: No valid response.";
+                const [moveLine, commentaryLine] = aiResponse.split('\n');
+                const move = moveLine.trim().toLowerCase();
+                const comment = commentaryLine ? commentaryLine.trim() : "Hmm... thinking...";
+
+                applyAIMove(move);
+                commentary.textContent = comment;
+
+            } catch (error) {
+                commentary.textContent = 'Error contacting AI.';
+                console.error(error);
             }
 
-            if (aiResponse.includes('O WON') || aiResponse.includes('X WON')) {
-                commentary.textContent = aiResponse.includes('O WON') ? 'AI has won!' : 'You have won!';
-                gameOver = true;
-                board.classList.remove('disabled');
-                return;
-            }
-
-            const [moveLine, commentaryLine] = aiResponse.split('\n');
-            const move = moveLine.trim().toLowerCase();
-            const comment = commentaryLine ? commentaryLine.trim() : "Hmm... thinking...";
-
-            applyAIMove(move);
-            commentary.textContent = comment;
-
-        } catch (error) {
-            commentary.textContent = 'Error getting AI response.';
-            console.error(error);
+            board.classList.remove('disabled');
         }
 
-        board.classList.remove('disabled');
-    }
+        function applyAIMove(position) {
+            const posNames = [
+                'top left', 'top middle', 'top right',
+                'middle left', 'center', 'middle right',
+                'bottom left', 'bottom middle', 'bottom right'
+            ];
 
-    function applyAIMove(position) {
-        const posNames = [
-            'top left', 'top middle', 'top right',
-            'middle left', 'center', 'middle right',
-            'bottom left', 'bottom middle', 'bottom right'
-        ];
+            const idx = posNames.indexOf(position);
 
-        const idx = posNames.indexOf(position);
-
-        if (idx !== -1 && cells[idx] === '') {
-            cells[idx] = 'O';
-            renderBoard();
-            if (checkWin('O')) {
-                commentary.textContent = 'AI has won!';
-                gameOver = true;
+            if (idx !== -1 && cells[idx] === '') {
+                cells[idx] = 'O';
+                renderBoard();
+                if (checkWin('O')) {
+                    commentary.textContent = 'AI has won!';
+                    gameOver = true;
+                }
             }
         }
-    }
 
-    renderBoard();
-</script>
+        renderBoard();
+    </script>
+
+</body>
+</html>
