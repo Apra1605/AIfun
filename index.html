@@ -4,6 +4,74 @@
     <meta charset="utf-8">
     <title>AI Games Hub</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Popup Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.4);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+            padding: 30px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            color: white;
+        }
+
+        .modal-content h2 {
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .game-list {
+            list-style: none;
+            padding: 0;
+            font-size: 1.2em;
+        }
+
+        .game-list li {
+            margin: 10px 0;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.15);
+            transition: background 0.3s;
+        }
+
+        .game-list li:hover {
+            background: rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+        }
+
+        .close-btn {
+            margin-top: 20px;
+            background: linear-gradient(90deg, #ff8a00, #e52e71);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+        }
+
+        .close-btn:hover {
+            opacity: 0.8;
+        }
+    </style>
 </head>
 <body>
 
@@ -11,11 +79,34 @@
         <div class="blob"></div>
         <div class="content-glass">
             <h1>AI Games Hub</h1>
-            <p>Challenge powerful AI models in futuristic games. Coming soon.</p>
-            <button>Explore Games</button>
+            <p>Challenge powerful AI in futuristic games. Coming soon.</p>
+            <button onclick="openModal()">Explore Games</button>
         </div>
     </div>
+
+    <!-- Popup Modal -->
+    <div id="gamesModal" class="modal">
+        <div class="modal-content">
+            <h2>Available Games</h2>
+            <ul class="game-list">
+                <li>♟️ Chess</li>
+                <li>⭕ Tic-Tac-Toe</li>
+            </ul>
+            <button class="close-btn" onclick="closeModal()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        function openModal() {
+            document.getElementById('gamesModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('gamesModal').style.display = 'none';
+        }
+    </script>
 
     <script src="scripts.js"></script>
 </body>
 </html>
+
