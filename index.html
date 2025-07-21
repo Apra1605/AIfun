@@ -3,7 +3,6 @@
 <head>
     <meta charset="utf-8">
     <title>AI Games Hub</title>
-    <link rel="stylesheet" href="styles.css">
     <style>
         * {
             margin: 0;
@@ -86,18 +85,11 @@
         }
 
         @keyframes morph {
-            0% {
-                border-radius: 33% 67% 70% 30% / 30% 30% 70% 70%;
-            }
-            50% {
-                border-radius: 60% 40% 30% 70% / 60% 40% 60% 40%;
-            }
-            100% {
-                border-radius: 33% 67% 70% 30% / 30% 30% 70% 70%;
-            }
+            0% { border-radius: 33% 67% 70% 30% / 30% 30% 70% 70%; }
+            50% { border-radius: 60% 40% 30% 70% / 60% 40% 60% 40%; }
+            100% { border-radius: 33% 67% 70% 30% / 30% 30% 70% 70%; }
         }
 
-        /* Popup Modal Styles */
         .modal {
             display: flex;
             position: fixed;
@@ -151,12 +143,13 @@
             padding: 10px 20px;
             border-radius: 15px;
             border: 1px solid rgba(255,255,255,0.15);
-            transition: background 0.3s;
+            transition: background 0.3s, color 0.3s;
+            cursor: pointer;
         }
 
         .game-list li:hover {
             background: rgba(255, 255, 255, 0.2);
-            cursor: pointer;
+            color: #92fe9d;
         }
 
         .close-btn {
@@ -186,13 +179,12 @@
         </div>
     </div>
 
-    <!-- Popup Modal -->
     <div id="gamesModal" class="modal">
         <div class="modal-content">
             <h2>Available Games</h2>
             <ul class="game-list">
-                <li>♟️ Chess</li>
-                <li>⭕ Tic-Tac-Toe</li>
+                <li>♟️ Chess (coming soon)</li>
+                <li onclick="location.href='ttt.html'">⭕ Play Tic-Tac-Toe</li>
             </ul>
             <button class="close-btn" onclick="closeModal()">Close</button>
         </div>
