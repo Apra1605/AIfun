@@ -12,7 +12,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             min-height: 100vh;
         }
 
@@ -22,9 +22,37 @@
             color: #00c9ff;
         }
 
+        .blob-container {
+            margin-top: 30px;
+            position: relative;
+            width: 200px;
+            height: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 800px;
+        }
+
+        .blob {
+            width: 150px;
+            height: 150px;
+            background: linear-gradient(135deg, #00c9ff, #92fe9d);
+            border-radius: 33% 67% 70% 30% / 30% 30% 70% 70%;
+            animation: morph 8s infinite ease-in-out;
+            box-shadow: 0 10px 30px rgba(0, 201, 255, 0.6);
+            transform-style: preserve-3d;
+            transform: rotateY(20deg);
+        }
+
+        @keyframes morph {
+            0% { border-radius: 33% 67% 70% 30% / 30% 30% 70% 70%; }
+            50% { border-radius: 60% 40% 30% 70% / 60% 40% 60% 40%; }
+            100% { border-radius: 33% 67% 70% 30% / 30% 30% 70% 70%; }
+        }
+
         .game-container {
             display: flex;
-            margin-top: 30px;
+            margin-top: 20px;
             gap: 40px;
             align-items: flex-start;
         }
@@ -56,29 +84,6 @@
             background: rgba(255, 255, 255, 0.15);
         }
 
-        .ai-profile {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            max-width: 200px;
-        }
-
-        .blob {
-            width: 120px;
-            height: 120px;
-            background: linear-gradient(135deg, #00c9ff, #92fe9d);
-            border-radius: 33% 67% 70% 30% / 30% 30% 70% 70%;
-            animation: morph 8s infinite ease-in-out;
-            filter: blur(40px);
-            opacity: 0.8;
-        }
-
-        @keyframes morph {
-            0% { border-radius: 33% 67% 70% 30% / 30% 30% 70% 70%; }
-            50% { border-radius: 60% 40% 30% 70% / 60% 40% 60% 40%; }
-            100% { border-radius: 33% 67% 70% 30% / 30% 30% 70% 70%; }
-        }
-
         .commentary-bubble {
             margin-top: 20px;
             background: rgba(255, 255, 255, 0.1);
@@ -89,6 +94,7 @@
             font-size: 0.95em;
             line-height: 1.4em;
             border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 250px;
         }
 
         .disabled {
@@ -99,22 +105,24 @@
 </head>
 <body>
 
-    <h1>Tic Tac Toe vs AI</h1>
+    <h1>Tic Tac Toe vs Gemini AI</h1>
+
+    <div class="blob-container">
+        <div class="blob"></div>
+    </div>
 
     <div class="game-container">
         <div class="board" id="board"></div>
-        <div class="ai-profile">
-            <div class="blob"></div>
-            <div class="commentary-bubble" id="commentary">
-                Awaiting your move...
-            </div>
+        <div class="commentary-bubble" id="commentary">
+            Awaiting your move...
         </div>
     </div>
 
     <script>
+        const GEMINI_API_KEY = 'AIzaSyBELzK5j4T6kss4ZQSz4OLB7OLX-Bo_WO4';
         const board = document.getElementById('board');
         const commentary = document.getElementById('commentary');
-        let cells = ['', '', '', '', '', '', '', '', '']; // 9 cells
+        let cells = ['', '', '', '', '', '', '', '', ''];
 
         function renderBoard() {
             board.innerHTML = '';
@@ -129,31 +137,10 @@
 
         function handleMove(index) {
             if (cells[index] !== '') return;
-
             cells[index] = 'X';
             renderBoard();
             board.classList.add('disabled');
             requestAIMove();
-        }
-
-        function requestAIMove() {
-            const xPositions = getPositions('X');
-            const oPositions = getPositions('O');
-
-            const prompt = `
-You are playing Tic Tac Toe as O.
-X: ${xPositions}
-O: ${oPositions}
-Respond with your next move in words (example: "middle left") and a short commentary about the move.
-`;
-
-            // Simulated Gemini API call (replace this with real fetch to Gemini API)
-            setTimeout(() => {
-                const aiMove = fakeAIMove();
-                applyAIMove(aiMove.position);
-                commentary.textContent = aiMove.commentary;
-                board.classList.remove('disabled');
-            }, 1000);
         }
 
         function getPositions(player) {
@@ -169,6 +156,53 @@ Respond with your next move in words (example: "middle left") and a short commen
                 .join(', ') || 'none';
         }
 
+        async function requestAIMove() {
+            const xPositions = getPositions('X');
+            const oPositions = getPositions('O');
+
+            const prompt = `
+You are playing Tic Tac Toe as O.
+X: ${xPositions}
+O: ${oPositions}
+Respond ONLY with your move in words (like: "middle left") and a short commentary. Example reply:
+middle right
+"I'm watching you carefully. Let's see your next move."
+`;
+
+            commentary.textContent = 'AI is thinking...';
+
+            const body = {
+                contents: [{ parts: [{ text: prompt }] }]
+            };
+
+            try {
+                const response = await fetch(
+                    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + GEMINI_API_KEY,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    }
+                );
+
+                const data = await response.json();
+                const aiResponse = data.candidates[0]?.content?.parts[0]?.text || '';
+
+                // Split response: first line = move, second line = commentary
+                const [moveLine, commentaryLine] = aiResponse.split('\n');
+                const move = moveLine.trim().toLowerCase();
+                const comment = commentaryLine ? commentaryLine.trim() : "Hmm... thinking...";
+
+                applyAIMove(move);
+                commentary.textContent = comment;
+            } catch (error) {
+                commentary.textContent = 'Error getting AI response.';
+                console.error(error);
+            }
+
+            board.classList.remove('disabled');
+        }
+
         function applyAIMove(position) {
             const posNames = [
                 'top left', 'top middle', 'top right',
@@ -182,26 +216,6 @@ Respond with your next move in words (example: "middle left") and a short commen
                 cells[idx] = 'O';
                 renderBoard();
             }
-        }
-
-        // Simulated AI response (replace this with real Gemini call result)
-        function fakeAIMove() {
-            const emptyIndexes = cells
-                .map((v, i) => v === '' ? i : null)
-                .filter(v => v !== null);
-
-            const posNames = [
-                'top left', 'top middle', 'top right',
-                'middle left', 'center', 'middle right',
-                'bottom left', 'bottom middle', 'bottom right'
-            ];
-
-            const randomIndex = emptyIndexes[Math.floor(Math.random() * emptyIndexes.length)];
-
-            return {
-                position: posNames[randomIndex],
-                commentary: "Thinking ahead... I’ll block your path!"
-            };
         }
 
         renderBoard();
