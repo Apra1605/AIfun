@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Tic Tac Toe</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            margin-top: 20px;
+            font-size: 2em;
+            color: #00c9ff;
+        }
+
+        .game-container {
+            display: flex;
+            margin-top: 30px;
+            gap: 40px;
+            align-items: flex-start;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 5px;
+            background: #0f0c29;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+        }
+
+        .cell {
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2em;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .cell:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .ai-profile {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 200px;
+        }
+
+        .blob {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #00c9ff, #92fe9d);
+            border-radius: 33% 67% 70% 30% / 30% 30% 70% 70%;
+            animation: morph 8s infinite ease-in-out;
+            filter: blur(40px);
+            opacity: 0.8;
+        }
+
+        @keyframes morph {
+            0% { border-radius: 33% 67% 70% 30% / 30% 30% 70% 70%; }
+            50% { border-radius: 60% 40% 30% 70% / 60% 40% 60% 40%; }
+            100% { border-radius: 33% 67% 70% 30% / 30% 30% 70% 70%; }
+        }
+
+        .commentary-bubble {
+            margin-top: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            font-style: italic;
+            font-size: 0.95em;
+            line-height: 1.4em;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .disabled {
+            pointer-events: none;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Tic Tac Toe vs AI</h1>
+
+    <div class="game-container">
+        <div class="board" id="board"></div>
+        <div class="ai-profile">
+            <div class="blob"></div>
+            <div class="commentary-bubble" id="commentary">
+                Awaiting your move...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const board = document.getElementById('board');
+        const commentary = document.getElementById('commentary');
+        let cells = ['', '', '', '', '', '', '', '', '']; // 9 cells
+
+        function renderBoard() {
+            board.innerHTML = '';
+            cells.forEach((cell, index) => {
+                const cellDiv = document.createElement('div');
+                cellDiv.classList.add('cell');
+                cellDiv.textContent = cell;
+                cellDiv.onclick = () => handleMove(index);
+                board.appendChild(cellDiv);
+            });
+        }
+
+        function handleMove(index) {
+            if (cells[index] !== '') return;
+
+            cells[index] = 'X';
+            renderBoard();
+            board.classList.add('disabled');
+            requestAIMove();
+        }
+
+        function requestAIMove() {
+            const xPositions = getPositions('X');
+            const oPositions = getPositions('O');
+
+            const prompt = `
+You are playing Tic Tac Toe as O.
+X: ${xPositions}
+O: ${oPositions}
+Respond with your next move in words (example: "middle left") and a short commentary about the move.
+`;
+
+            // Simulated Gemini API call (replace this with real fetch to Gemini API)
+            setTimeout(() => {
+                const aiMove = fakeAIMove();
+                applyAIMove(aiMove.position);
+                commentary.textContent = aiMove.commentary;
+                board.classList.remove('disabled');
+            }, 1000);
+        }
+
+        function getPositions(player) {
+            const posNames = [
+                'top left', 'top middle', 'top right',
+                'middle left', 'center', 'middle right',
+                'bottom left', 'bottom middle', 'bottom right'
+            ];
+
+            return cells
+                .map((val, idx) => val === player ? posNames[idx] : null)
+                .filter(val => val)
+                .join(', ') || 'none';
+        }
+
+        function applyAIMove(position) {
+            const posNames = [
+                'top left', 'top middle', 'top right',
+                'middle left', 'center', 'middle right',
+                'bottom left', 'bottom middle', 'bottom right'
+            ];
+
+            const idx = posNames.indexOf(position);
+
+            if (idx !== -1 && cells[idx] === '') {
+                cells[idx] = 'O';
+                renderBoard();
+            }
+        }
+
+        // Simulated AI response (replace this with real Gemini call result)
+        function fakeAIMove() {
+            const emptyIndexes = cells
+                .map((v, i) => v === '' ? i : null)
+                .filter(v => v !== null);
+
+            const posNames = [
+                'top left', 'top middle', 'top right',
+                'middle left', 'center', 'middle right',
+                'bottom left', 'bottom middle', 'bottom right'
+            ];
+
+            const randomIndex = emptyIndexes[Math.floor(Math.random() * emptyIndexes.length)];
+
+            return {
+                position: posNames[randomIndex],
+                commentary: "Thinking ahead... I’ll block your path!"
+            };
+        }
+
+        renderBoard();
+    </script>
+
+</body>
+</html>
