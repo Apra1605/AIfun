@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Tic Tac Toe vs Gemini AI</title>
+    <title>Tic Tac Toe vs Gemini AI (Optimized)</title>
     <style>
         body {
             margin: 0;
@@ -112,7 +112,7 @@
 </head>
 <body>
 
-    <h1>Tic Tac Toe vs Gemini AI</h1>
+    <h1>Tic Tac Toe vs Gemini AI (Smarter)</h1>
 
     <div class="top-section">
         <div class="blob-frame">
@@ -189,20 +189,36 @@
             const prompt = `
 You are playing Tic Tac Toe as O.
 
-Current board:
+Step-by-step:
+1. If X is about to win, block X immediately.
+2. If you can win this turn, win.
+3. Otherwise, play center, corners, then sides, in that priority.
+
+Example:
+X: top middle
+O: center
+Your move:
+top left
+"Blocking your win."
+
+Now solve:
+
 X: ${xPositions}
 O: ${oPositions}
 
-IMPORTANT:
-- On the FIRST LINE: reply with ONLY your move as a board location (example: "middle left").
-- On the SECOND LINE: reply with short commentary.
-- DO NOT explain further.
-- If X or O has already won: reply ONLY "X WON" or "O WON" without a move or commentary.
+Reply in exactly two lines:
+[Move position like "middle left"]
+[Short commentary sentence.]
+
+If X or O has already won, reply only with:
+"X WON" or "O WON"
+
+Do not explain.
+Do not generate anything else.
+Respond as if your temperature is zero (be consistent).
 `;
 
-            console.log("X Positions:", xPositions);
-            console.log("O Positions:", oPositions);
-            console.log("Prompt Sent to Gemini:\n", prompt);
+            console.log("Prompt sent to Gemini:\n", prompt);
 
             commentary.textContent = 'AI is thinking...';
 
@@ -234,7 +250,7 @@ IMPORTANT:
                     aiResponse = "ERROR: No valid response.";
                 }
 
-                console.log("AI Unfiltered Response:\n", aiResponse);
+                console.log("Gemini Raw Reply:\n", aiResponse);
 
                 if (aiResponse.includes('O WON') || aiResponse.includes('X WON')) {
                     commentary.textContent = aiResponse.includes('O WON') ? 'AI has won!' : 'You have won!';
@@ -243,12 +259,13 @@ IMPORTANT:
                     return;
                 }
 
-                const move = parseMove(aiResponse);
-                const comment = parseComment(aiResponse);
+                const [moveLine, commentaryLine] = aiResponse.split('\n');
+                const move = parseMove(moveLine);
+                const comment = commentaryLine ? commentaryLine.trim() : "Hmm... thinking...";
 
                 if (!move) {
-                    commentary.textContent = 'AI did not provide a valid move.';
-                    console.error("AI response missing a valid move.");
+                    commentary.textContent = 'AI gave no valid move.';
+                    console.error("AI response missing move.");
                     board.classList.remove('disabled');
                     return;
                 }
@@ -264,26 +281,20 @@ IMPORTANT:
             board.classList.remove('disabled');
         }
 
-        function parseMove(response) {
+        function parseMove(text) {
             const positions = [
                 'top left', 'top middle', 'top right',
                 'middle left', 'center', 'middle right',
                 'bottom left', 'bottom middle', 'bottom right'
             ];
-
+            text = text.toLowerCase();
             for (let pos of positions) {
-                if (response.toLowerCase().includes(pos)) {
-                    console.log("Parsed AI Move:", pos);
+                if (text.includes(pos)) {
+                    console.log("Parsed Move:", pos);
                     return pos;
                 }
             }
-
             return null;
-        }
-
-        function parseComment(response) {
-            const lines = response.split('\n');
-            return lines.length > 1 ? lines.slice(1).join('\n').trim() : "Hmm... thinking...";
         }
 
         function applyAIMove(position) {
@@ -292,7 +303,6 @@ IMPORTANT:
                 'middle left', 'center', 'middle right',
                 'bottom left', 'bottom middle', 'bottom right'
             ];
-
             const idx = posNames.indexOf(position);
 
             if (idx !== -1 && cells[idx] === '') {
