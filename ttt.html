@@ -190,9 +190,11 @@
 You are playing Tic Tac Toe as O.
 
 Step-by-step:
-1. If X is about to win, block X immediately.
-2. If you can win this turn, win.
+1. If X is about to win on their immediate next turn, block X immediately.
+2. If there is a clear win then immediately take it (as a win in one move)
 3. Otherwise, play center, corners, then sides, in that priority.
+4. Future threats do not matter, only defend immediate wins from the opposition.
+5. Remember the Wins in Tic-tac-toe are "top right, top middle, top left", "middle right, center, middle left", "bottom left, bottom middle, bottom right", "top right, center, bottom left", "top left, center, bottom right", "top left, middle left, bottom left", "top middle, center, bottom middle", "top right, middle right, bottom right".
 
 Example:
 X: top middle
