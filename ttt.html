@@ -187,21 +187,22 @@
             const oPositions = getPositions('O');
 
             const prompt = `
-You are playing Tic Tac Toe as O. You are the best Tic Tac Toe player possible.
+You are playing Tic Tac Toe as O.
 
 Current board:
 X: ${xPositions}
 O: ${oPositions}
 
-If someone has won, respond ONLY:
-"O WON"
-or
-"X WON"
-
-Otherwise:
-- Reply with your move position (like "middle left") as the first line.
-- Reply with a short commentary as the second line.
+IMPORTANT:
+- On the FIRST LINE: reply with ONLY your move as a board location (example: "middle left").
+- On the SECOND LINE: reply with short commentary.
+- DO NOT explain further.
+- If X or O has already won: reply ONLY "X WON" or "O WON" without a move or commentary.
 `;
+
+            console.log("X Positions:", xPositions);
+            console.log("O Positions:", oPositions);
+            console.log("Prompt Sent to Gemini:\n", prompt);
 
             commentary.textContent = 'AI is thinking...';
 
@@ -223,6 +224,8 @@ Otherwise:
                 );
 
                 const data = await response.json();
+                console.log("Full Gemini API Response:", data);
+
                 let aiResponse = '';
 
                 if (data?.candidates?.[0]?.content?.parts?.[0]?.text) {
@@ -231,6 +234,8 @@ Otherwise:
                     aiResponse = "ERROR: No valid response.";
                 }
 
+                console.log("AI Unfiltered Response:\n", aiResponse);
+
                 if (aiResponse.includes('O WON') || aiResponse.includes('X WON')) {
                     commentary.textContent = aiResponse.includes('O WON') ? 'AI has won!' : 'You have won!';
                     gameOver = true;
@@ -238,9 +243,15 @@ Otherwise:
                     return;
                 }
 
-                const [moveLine, commentaryLine] = aiResponse.split('\n');
-                const move = moveLine.trim().toLowerCase();
-                const comment = commentaryLine ? commentaryLine.trim() : "Hmm... thinking...";
+                const move = parseMove(aiResponse);
+                const comment = parseComment(aiResponse);
+
+                if (!move) {
+                    commentary.textContent = 'AI did not provide a valid move.';
+                    console.error("AI response missing a valid move.");
+                    board.classList.remove('disabled');
+                    return;
+                }
 
                 applyAIMove(move);
                 commentary.textContent = comment;
@@ -251,6 +262,28 @@ Otherwise:
             }
 
             board.classList.remove('disabled');
+        }
+
+        function parseMove(response) {
+            const positions = [
+                'top left', 'top middle', 'top right',
+                'middle left', 'center', 'middle right',
+                'bottom left', 'bottom middle', 'bottom right'
+            ];
+
+            for (let pos of positions) {
+                if (response.toLowerCase().includes(pos)) {
+                    console.log("Parsed AI Move:", pos);
+                    return pos;
+                }
+            }
+
+            return null;
+        }
+
+        function parseComment(response) {
+            const lines = response.split('\n');
+            return lines.length > 1 ? lines.slice(1).join('\n').trim() : "Hmm... thinking...";
         }
 
         function applyAIMove(position) {
